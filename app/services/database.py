@@ -37,20 +37,9 @@ class DatabaseService:
             pool_size = settings.POSTGRES_POOL_SIZE
             max_overflow = settings.POSTGRES_MAX_OVERFLOW
 
-            # Use DATABASE_URL if present, otherwise construct manually
-            import os
-            database_url = os.getenv("DATABASE_URL")
-            if database_url:
-                if database_url.startswith("postgres://"):
-                    database_url = database_url.replace("postgres://", "postgresql://", 1)
-                connection_url = database_url
-                logger.info("database_connecting_via_url")
-            else:
-                connection_url = (
-                    f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-                    f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-                )
-                logger.info("database_connecting_to", host=settings.POSTGRES_HOST, port=settings.POSTGRES_PORT, db=settings.POSTGRES_DB)
+            # Use settings.DATABASE_URL (parsed from DATABASE_URL env var or constructed from POSTGRES_* vars)
+            connection_url = settings.DATABASE_URL
+            logger.info("database_connecting_to", host=settings.POSTGRES_HOST, port=settings.POSTGRES_PORT, db=settings.POSTGRES_DB)
 
             self.engine = create_engine(
                 connection_url,

@@ -49,7 +49,7 @@ else
 fi
 
 # Check required sensitive environment variables
-required_vars=("JWT_SECRET" "GROQ_API_KEY")
+required_vars=("GROQ_API_KEY")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -71,6 +71,7 @@ fi
 echo -e "\nFinal environment configuration:"
 echo "Environment: ${APP_ENV:-development}"
 
+echo "DATABASE_URL: $( [[ -n ${DATABASE_URL:-} ]] && echo 'set' || echo 'NOT SET - will use localhost fallback' )"
 echo "Database Host: $( [[ -n ${POSTGRES_HOST:-${DB_HOST:-}} ]] && echo 'set' || echo 'Not set' )"
 echo "Database Port: $( [[ -n ${POSTGRES_PORT:-${DB_PORT:-}} ]] && echo 'set' || echo 'Not set' )"
 echo "Database Name: $( [[ -n ${POSTGRES_DB:-${DB_NAME:-}} ]] && echo 'set' || echo 'Not set' )"

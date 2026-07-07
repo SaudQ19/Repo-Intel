@@ -4,7 +4,6 @@ Loads the database URL from the application's settings so migrations
 stay in sync with the running app configuration.
 """
 
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -24,18 +23,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Build the database URL
-env_db_url = os.getenv("DATABASE_URL")
-if env_db_url:
-    if env_db_url.startswith("postgres://"):
-        env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
-    DATABASE_URL = env_db_url
-else:
-    DATABASE_URL = (
-        f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-    )
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# Use settings.DATABASE_URL (handles DATABASE_URL env var parsing automatically)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Point Alembic at our SQLModel metadata for autogenerate support
 target_metadata = SQLModel.metadata

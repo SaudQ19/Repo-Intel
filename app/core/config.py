@@ -119,14 +119,32 @@ class Settings:
         self.PROFILING_DIR = Path(os.getenv("PROFILING_DIR", "/tmp/fastapi_profiles"))
         self.PROFILING_THRESHOLD_SECONDS = float(os.getenv("PROFILING_THRESHOLD_SECONDS", "2.0"))
 
-        # PostgreSQL
-        self.POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-        self.POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-        self.POSTGRES_DB = os.getenv("POSTGRES_DB", "repo_intel_db")
-        self.POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-        self.POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
-        self.POSTGRES_POOL_SIZE = int(os.getenv("POSTGRES_POOL_SIZE", "20"))
-        self.POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", "10"))
+        # PostgreSQL — parse DATABASE_URL first if provided (Render / Heroku style)
+        _db_url = os.getenv("DATABASE_URL", "")
+        if _db_url:
+            # Normalize postgres:// -> postgresql://
+            if _db_url.startswith("postgres://"):
+                _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+            from urllib.parse import urlparse
+            _parsed = urlparse(_db_url)
+            self.POSTGRES_HOST = _parsed.hostname or "localhost"
+            self.POSTGRES_PORT = _parsed.port or 5432
+            self.POSTGRES_DB = (_parsed.path or "/repo_intel_db").lstrip("/")
+            self.POSTGRES_USER = _parsed.username or "postgres"
+            self.POSTGRES_PASSWORD = _parsed.password or "postgres"
+            self.DATABASE_URL = _db_url
+        else:
+            self.POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+            self.POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+            self.POSTGRES_DB = os.getenv("POSTGRES_DB", "repo_intel_db")
+            self.POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+            self.POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
+            self.DATABASE_URL = (
+                f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            )
+        self.POSTGRES_POOL_SIZE = int(os.getenv("POSTGRES_POOL_SIZE", "5"))
+        self.POSTGRES_MAX_OVERFLOW = int(os.getenv("POSTGRES_MAX_OVERFLOW", "2"))
         self.CHECKPOINT_TABLES = ["checkpoint_blobs", "checkpoint_writes", "checkpoints"]
 
         # GitHub MCP
