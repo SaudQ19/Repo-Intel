@@ -49,7 +49,7 @@ else
 fi
 
 # Check required sensitive environment variables
-required_vars=("GROQ_API_KEY")
+required_vars=("JWT_SECRET" "GROQ_API_KEY")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do

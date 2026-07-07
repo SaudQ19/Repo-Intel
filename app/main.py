@@ -28,7 +28,6 @@ from app.core.middleware import (
 )
 from app.core.observability import langfuse_init
 from app.services.database import database_service
-from app.services.memory import memory_service
 
 # Load environment variables
 load_dotenv()
@@ -57,12 +56,6 @@ async def lifespan(app: FastAPI):
         logger.info("graph_pre_warmed")
     except Exception as e:
         logger.exception("graph_pre_warm_failed", error=str(e))
-
-    # Pre-warm mem0 AsyncMemory
-    try:
-        await memory_service.initialize()
-    except Exception as e:
-        logger.exception("memory_service_pre_warm_failed", error=str(e))
 
     # Seed default repositories if not already present
     try:

@@ -87,10 +87,6 @@ class Settings:
         # CORS
         self.ALLOWED_ORIGINS = parse_list_from_env("ALLOWED_ORIGINS", ["*"])
 
-        # Demo Mode — restricts indexing, deletion, and expensive operations
-        self.DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() in ("true", "1", "t", "yes")
-        self.DEMO_REPOSITORIES = parse_list_from_env("DEMO_REPOSITORIES", [])
-
         # Langfuse (optional observability)
         self.LANGFUSE_TRACING_ENABLED = os.getenv("LANGFUSE_TRACING_ENABLED", "false").lower() in (
             "true",
@@ -113,7 +109,6 @@ class Settings:
         # Embeddings
         self.HF_TOKEN = os.getenv("HF_TOKEN", "")
         self.LONG_TERM_MEMORY_EMBEDDER_MODEL = os.getenv("LONG_TERM_MEMORY_EMBEDDER_MODEL", "BAAI/bge-small-en-v1.5")
-        self.LONG_TERM_MEMORY_COLLECTION_NAME = os.getenv("LONG_TERM_MEMORY_COLLECTION_NAME", "longterm_memory")
 
         # Logging
         self.LOG_DIR = Path(os.getenv("LOG_DIR", "logs"))

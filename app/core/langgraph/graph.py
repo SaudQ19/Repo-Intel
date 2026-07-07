@@ -4,7 +4,6 @@ import asyncio
 from typing import (
     AsyncGenerator,
     Optional,
-    cast,
 )
 from urllib.parse import quote_plus
 
@@ -56,7 +55,6 @@ from app.schemas import (
     Message,
 )
 from app.services.llm import llm_service
-from app.services.memory import memory_service
 from app.utils import (
     dump_messages,
     extract_text_content,
@@ -323,20 +321,16 @@ class LangGraphAgent:
         }
 
         try:
-            # Run state check and memory search concurrently to save 200-500ms
-            state, relevant_memory = await asyncio.gather(
-                graph.aget_state(config),
-                memory_service.search(user_id, messages[-1].content),
-            )
+            state = await graph.aget_state(config)
+            relevant_memory = "No relevant memory found."
 
             if state.next:
                 logger.info("resuming_interrupted_graph", session_id=session_id, next_nodes=state.next)
                 response = await graph.ainvoke(
-                    Command(resume=messages[-1].content),
-                    config=config,
+                     Command(resume=messages[-1].content),
+                     config=config,
                 )
             else:
-                relevant_memory = relevant_memory or "No relevant memory found."
                 response = await graph.ainvoke(
                     input={"messages": dump_messages(messages), "long_term_memory": relevant_memory},
                     config=config,
@@ -349,8 +343,6 @@ class LangGraphAgent:
                 logger.info("graph_interrupted", session_id=session_id, interrupt_value=str(interrupt_value))
                 return [Message(role="assistant", content=str(interrupt_value))]
 
-            openai_msgs = cast(list[dict], convert_to_openai_messages(response["messages"]))
-            asyncio.create_task(memory_service.add(user_id, openai_msgs, config.get("metadata")))
             return self.__process_messages(response["messages"])
         except GraphInterrupt:
             state = await graph.aget_state(config)
@@ -397,17 +389,13 @@ class LangGraphAgent:
         graph = await self._get_graph()
 
         try:
-            # Run state check and memory search concurrently to save 200-500ms
-            state, relevant_memory = await asyncio.gather(
-                graph.aget_state(config),
-                memory_service.search(user_id, messages[-1].content),
-            )
+            state = await graph.aget_state(config)
+            relevant_memory = "No relevant memory found."
 
             if state.next:
                 logger.info("resuming_interrupted_graph_stream", session_id=session_id, next_nodes=state.next)
                 graph_input = Command(resume=messages[-1].content)
             else:
-                relevant_memory = relevant_memory or "No relevant memory found."
                 graph_input = {"messages": dump_messages(messages), "long_term_memory": relevant_memory}
 
             async for token, _ in graph.astream(
@@ -428,9 +416,6 @@ class LangGraphAgent:
                 interrupt_value = state.tasks[0].interrupts[0].value if state.tasks else "Waiting for input."
                 logger.info("graph_interrupted_stream", session_id=session_id, interrupt_value=str(interrupt_value))
                 yield str(interrupt_value)
-            elif state.values and "messages" in state.values:
-                openai_msgs = cast(list[dict], convert_to_openai_messages(state.values["messages"]))
-                asyncio.create_task(memory_service.add(user_id, openai_msgs, config.get("metadata")))
         except GraphInterrupt:
             state = await graph.aget_state(config)
             interrupt_value = state.tasks[0].interrupts[0].value if state.tasks else "Waiting for input."

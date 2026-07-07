@@ -12,7 +12,6 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from app.core.config import settings
 from app.core.logging import logger
 from app.models.repository import Repository
 from app.services.database import database_service
