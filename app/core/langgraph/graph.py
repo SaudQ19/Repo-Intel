@@ -98,11 +98,18 @@ class LangGraphAgent:
                 # Configure pool size based on environment
                 max_size = settings.POSTGRES_POOL_SIZE
 
-                connection_url = (
-                    "postgresql://"
-                    f"{quote_plus(settings.POSTGRES_USER)}:{quote_plus(settings.POSTGRES_PASSWORD)}"
-                    f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-                )
+                import os
+                database_url = os.getenv("DATABASE_URL")
+                if database_url:
+                    if database_url.startswith("postgres://"):
+                        database_url = database_url.replace("postgres://", "postgresql://", 1)
+                    connection_url = database_url
+                else:
+                    connection_url = (
+                        "postgresql://"
+                        f"{quote_plus(settings.POSTGRES_USER)}:{quote_plus(settings.POSTGRES_PASSWORD)}"
+                        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+                    )
 
                 self._connection_pool = AsyncConnectionPool(
                     connection_url,
