@@ -4,7 +4,6 @@ services:
     name: repointel-backend
     env: docker
     dockerfilePath: Dockerfile
-    preDeployCommand: /app/.venv/bin/alembic upgrade head
     plan: free
     envVars:
       - key: APP_ENV

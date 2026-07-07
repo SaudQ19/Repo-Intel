@@ -48,4 +48,4 @@ EXPOSE 8000
 RUN echo "Using ${APP_ENV} environment"
 
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
-CMD ["sh", "-c", "/app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "/app/.venv/bin/alembic upgrade head && /app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

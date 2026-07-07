@@ -3,7 +3,7 @@
  * All backend communication goes through this module.
  */
 
-let API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+let API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://repintel-backend-nknm.onrender.com';
 if (!API_BASE.endsWith('/api/v1')) {
   if (API_BASE.endsWith('/')) {
     API_BASE = API_BASE.slice(0, -1);
