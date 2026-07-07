@@ -50,6 +50,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception("cache_initialization_failed", error=str(e))
 
+    # Programmatically run Alembic migrations to ensure schema is up-to-date
+    try:
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        # Run upgrade head synchronously
+        command.upgrade(alembic_cfg, "head")
+        logger.info("alembic_migrations_completed_successfully")
+    except Exception as e:
+        logger.exception("alembic_migrations_failed_at_startup", error=str(e))
+        # Fall back to metadata creation if Alembic fails
+        try:
+            from sqlmodel import SQLModel
+            SQLModel.metadata.create_all(database_service.engine)
+            logger.info("fallback_metadata_creation_successful")
+        except Exception as fallback_err:
+            logger.exception("fallback_metadata_creation_failed", error=str(fallback_err))
+
     # Pre-warm the LangGraph agent: create graph + connection pool at startup
     try:
         await agent.create_graph()
