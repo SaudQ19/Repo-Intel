@@ -1,0 +1,27 @@
+.git
+.gitignore
+.dockerignore
+.vscode
+.gemini
+.agents
+.ruff_cache
+.python-version
+__pycache__
+*.pyc
+
+# Local Python virtual environment
+.venv
+
+# Database files
+*.db
+*.sqlite
+
+# Local Node dependencies and builds
+frontend/node_modules
+frontend/dist
+frontend/.svelte-kit
+frontend/.next
+
+# Runtime clones and logs
+data/
+logs/
