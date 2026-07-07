@@ -3,7 +3,13 @@
  * All backend communication goes through this module.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+let API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+if (!API_BASE.endsWith('/api/v1')) {
+  if (API_BASE.endsWith('/')) {
+    API_BASE = API_BASE.slice(0, -1);
+  }
+  API_BASE = `${API_BASE}/api/v1`;
+}
 
 /**
  * Generic fetch wrapper with error handling.
