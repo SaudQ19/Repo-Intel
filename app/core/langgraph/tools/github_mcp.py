@@ -72,50 +72,44 @@ async def get_github_mcp_tools() -> List[StructuredTool]:
             env=env,
         )
 
-        try:
+        async def _init_mcp() -> List[StructuredTool]:
+            """Inner coroutine so we can apply a timeout to the entire npx startup."""
             # Start client stdio context
-            _mcp_client_context = stdio_client(server_params)
-            read_stream, write_stream = await _mcp_client_context.__aenter__()
-            
-            # Start session
-            _mcp_session = ClientSession(read_stream, write_stream)
-            await _mcp_session.__aenter__()
-            await _mcp_session.initialize()
+            client_ctx = stdio_client(server_params)
+            read_stream, write_stream = await client_ctx.__aenter__()
 
-            # Retrieve available tools
-            mcp_tools_list = await _mcp_session.list_tools()
-            
-            wrapped_tools = []
+            session = ClientSession(read_stream, write_stream)
+            await session.__aenter__()
+            await session.initialize()
+
+            mcp_tools_list = await session.list_tools()
+
+            wrapped: List[StructuredTool] = []
             for tool_info in mcp_tools_list.tools:
                 tool_name = tool_info.name
                 tool_desc = tool_info.description or f"GitHub MCP tool: {tool_name}"
 
-                # Create wrapper closure
-                def make_call(name=tool_name):
-                    async def call_mcp_tool(**kwargs) -> str:
+                def make_call(name: str = tool_name) -> Any:
+                    async def call_mcp_tool(**kwargs: Any) -> str:
                         if not _mcp_session:
                             return "Error: GitHub MCP session is not active."
                         try:
                             result = await _mcp_session.call_tool(name, arguments=kwargs)
-                            # Handle text/json output formats gracefully
                             text_contents = [c.text for c in result.content if isinstance(c, TextContent)]
                             return "\n".join(text_contents)
-                        except Exception as e:
-                            logger.exception("github_mcp_tool_execution_failed", tool=name, error=str(e))
-                            return f"Error executing tool {name}: {str(e)}"
+                        except Exception as exc:
+                            logger.exception("github_mcp_tool_execution_failed", tool=name, error=str(exc))
+                            return f"Error executing tool {name}: {str(exc)}"
                     return call_mcp_tool
 
-                # Build a dynamic Pydantic model for schema definition
                 input_schema = tool_info.inputSchema
                 properties = input_schema.get("properties", {})
-                required = input_schema.get("required", [])
+                required_fields = input_schema.get("required", [])
 
-                fields = {}
+                fields: dict[str, Any] = {}
                 for prop_name, prop_data in properties.items():
                     prop_type = prop_data.get("type")
-                    
-                    # Map JSON types to python equivalents
-                    py_type = Any
+                    py_type: Any = Any
                     if prop_type == "string":
                         py_type = str
                     elif prop_type == "integer":
@@ -125,34 +119,49 @@ async def get_github_mcp_tools() -> List[StructuredTool]:
                     elif prop_type == "array":
                         py_type = list
 
-                    if prop_name in required:
-                        fields[prop_name] = (py_type, ... )
+                    if prop_name in required_fields:
+                        fields[prop_name] = (py_type, ...)
                     else:
                         fields[prop_name] = (Optional[py_type], None)
 
-                # Create model if fields exist, else empty model
                 args_schema = None
                 if fields:
                     args_schema = create_model(f"GitHubTool_{tool_name}_Args", **fields)
 
-                wrapped_tools.append(
+                wrapped.append(
                     StructuredTool(
                         name=f"github_{tool_name}",
                         description=tool_desc,
-                        func=None,  # We only define coroutine func for async execution
+                        func=None,
                         coroutine=make_call(tool_name),
                         args_schema=cast(Any, args_schema),
                     )
                 )
 
-            _mcp_tools = wrapped_tools
-            logger.info("github_mcp_tools_initialized_successfully", count=len(wrapped_tools))
+            # Store globals only after successful init
+            global _mcp_client_context, _mcp_session
+            _mcp_client_context = client_ctx
+            _mcp_session = session
+            return wrapped
+
+        try:
+            # 20-second hard timeout — if npx hangs (e.g. slow npm download on Render),
+            # give up and continue without GitHub MCP tools rather than blocking the port.
+            tools = await asyncio.wait_for(_init_mcp(), timeout=20.0)
+            _mcp_tools = tools
+            logger.info("github_mcp_tools_initialized_successfully", count=len(tools))
             return _mcp_tools
 
-        except Exception as e:
-            logger.exception("github_mcp_initialization_failed", error=str(e))
-            # Clean up on failure
+        except asyncio.TimeoutError:
+            logger.warning("github_mcp_initialization_timed_out_skipping_tools")
             _mcp_tools = []
             _mcp_session = None
             _mcp_client_context = None
             return []
+        except Exception as e:
+            logger.exception("github_mcp_initialization_failed", error=str(e))
+            _mcp_tools = []
+            _mcp_session = None
+            _mcp_client_context = None
+            return []
+
