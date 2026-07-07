@@ -35,12 +35,11 @@ RUN uv sync --frozen
 # Make entrypoint script executable - do this before changing user
 RUN chmod +x /app/scripts/docker-entrypoint.sh
 
-# Create a non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
+# Create a non-root user and ensure write permissions for runtime directories
+RUN useradd -m appuser && \
+    mkdir -p /app/logs /app/data && \
+    chown -R appuser:appuser /app/logs /app/data
 USER appuser
-
-# Create log directory
-RUN mkdir -p /app/logs
 
 # Default port
 EXPOSE 8000
