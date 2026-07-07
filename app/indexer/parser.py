@@ -10,6 +10,7 @@ class ASTParser:
     """Wrapper around tree-sitter to parse source files and extract semantic symbol structures."""
 
     def __init__(self):
+        """Initialize ASTParser and cache dictionary."""
         self._parsers: Dict[str, Parser] = {}
 
     def _get_parser(self, extension: str) -> Optional[Parser]:

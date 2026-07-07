@@ -9,6 +9,7 @@ from app.core.logging import logger
 from app.models.chunk import CodeChunk
 from app.services.database import database_service
 from app.services.llm import llm_service
+from app.utils.graph import extract_text_content
 
 ISSUE_RESOLVER_PROMPT = """You are a Senior Debugging Specialist.
 Analyze the user's issue report or stacktrace below, alongside the semantic code context matches extracted from the database.
@@ -38,7 +39,9 @@ class IssueResolverAgent:
 
             # 2. Get top 5 matches
             with Session(database_service.engine) as session:
-                distance_expr = CodeChunk.embedding.cosine_distance(query_vector)
+                from typing import Any
+                embedding_col: Any = CodeChunk.embedding
+                distance_expr = embedding_col.cosine_distance(query_vector)
                 statement = (
                     select(CodeChunk, distance_expr.label("distance"))
                     .where(CodeChunk.repository_id == repository_id)
@@ -71,7 +74,7 @@ class IssueResolverAgent:
 
             logger.info("issue_resolution_completed", repo_id=repository_id)
             return {
-                "diagnosis": response.content.strip(),
+                "diagnosis": extract_text_content(response.content).strip(),
                 "relevant_files": list(set([c.file_path for c, _ in results]))
             }
 

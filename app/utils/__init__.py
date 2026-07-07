@@ -1,4 +1,4 @@
-"""This file contains the utilities for the application."""
+"""Utility helpers for graph processing and message handling."""
 
 from .graph import (
     dump_messages,

@@ -7,6 +7,7 @@ from app.core.logging import logger
 from app.models.chunk import CodeChunk
 from app.services.database import database_service
 from app.services.llm import llm_service
+from app.utils.graph import extract_text_content
 
 DOC_BUILDER_PROMPT = """You are a Technical Architect.
 Based on the following list of file paths, classes, and function symbols extracted from the codebase, generate a comprehensive architectural markdown document.
@@ -64,7 +65,7 @@ class DocBuilderAgent:
 
             logger.info("documentation_generation_completed", repo_id=repository_id)
             return {
-                "documentation": response.content.strip()
+                "documentation": extract_text_content(response.content).strip()
             }
 
         except Exception as e:

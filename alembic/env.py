@@ -12,7 +12,6 @@ from sqlmodel import SQLModel
 from alembic import context
 from app.core.config import settings
 from app.models.session import Session  # noqa: F401
-from app.models.thread import Thread  # noqa: F401
 from app.models.repository import Repository  # noqa: F401
 from app.models.chunk import CodeChunk  # noqa: F401
 from app.models.agent_run import AgentRun  # noqa: F401

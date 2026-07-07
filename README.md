@@ -1,57 +1,56 @@
-# Repository Intelligence Platform (RepoIntel)
+# Repo-Intel: Repository Intelligence Platform
 
-RepoIntel is a production-ready, state-of-the-art Repository Intelligence Platform. It combines a stateful **FastAPI + LangGraph** backend agent framework with a modern **React + Vite** frontend console, designed to index, explore, search, and analyze codebases semantically. 
+Repo-Intel is a production-grade, high-fidelity Repository Intelligence Platform designed to index, explore, search, and analyze codebase architectures semantically. It features a stateful **FastAPI + LangGraph** multi-agent backend framework and a modern, glassmorphic **React + Vite** SPA console.
 
-Using **Tree-sitter AST parsing**, **pgvector** similarity search, and multi-agent workflows, RepoIntel enables developers to query code bases, perform automated Pull Request (PR) reviews, generate rich architectural documentation, and investigate issue resolutions.
+Using **Tree-sitter AST parsing**, **pgvector** similarity search, and native **GitHub MCP tool servers**, Repo-Intel enables developers (and recruiters) to interact with repositories in real-time—chatting with codebases, auto-reviewing pull requests, inspecting code issues, and generating system specification blueprints.
+
+---
+
+## 🚀 Live Demo & Visual Walkthrough
+
+- **⚡ Live Demo App**: [https://repo-intel-frontend.vercel.app](https://repo-intel-frontend.vercel.app)
+- **📹 Video Demonstration**: [Watch the Walkthrough](https://vimeo.com/your-demo-video-link) (Shows AST indexing, chatting, and GitHub MCP reviews)
+
+---
+
+## 🌟 Dual-Experience Design
+
+Repo-Intel is designed with two distinct operational experiences in mind:
+
+### 1. Hosted Demo (Recruiter Experience)
+*   **Zero Setup**: Recruiter-friendly demo pre-populated with:
+    - **Denoising Diffusion PyTorch** (`lucidrains/denoising-diffusion-pytorch`)
+    - **Starlette** (`encode/starlette`)
+*   **Strict Security Guardrails**: Indexing, deletion, and write API paths are disabled (`DEMO_MODE=true`) to block arbitrary resource abuse.
+*   **Predictable Performance**: Cached similarity lookups and structured mock fallbacks ensure instant responses.
+
+### 2. Self-Hosted Full Version (Developer Experience)
+*   **Arbitrary Indexing**: Scan and index any public GitHub repository or local directory path.
+*   **AST Code Parser**: Extracts symbols (classes, methods, and functions) for language-aware code understanding.
+*   **Dockerized Stack**: Launch FastAPI, React, and PostgreSQL + pgvector locally with a single command.
 
 ---
 
 ## Key Features
 
-### 💻 Smart Frontend Console (React + Vite)
-- **Workspace Repository Management:** Add remote Git URLs (automatically cloned via a shallow clone depth) or point directly to absolute local folders.
-- **Repository-specific Chat:** Switch contexts fluidly; session-based history is persisted uniquely per repository workspace.
-- **Background Jobs Interface:** Trigger, monitor, and inspect the results of long-running agent workflows (PR Reviews, Documentation builds, Issue Resolution).
+### 💻 Modern Frontend Console (React + Vite)
+- **Direct Workspace Navigation**: Replaced old dropdowns with a Slack-style sidebar listing codebases directly.
+- **Pulsing Status Indicators**: Displays real-time mini status dots (active, pending, failed) or loading spinners (indexing) as your repositories are processed.
+- **Inline Drawer Registration**: A minimalist "+ Register Repository" form slides out at the bottom-left corner of the sidebar, initiating backend tasks instantly.
+- **One-Click Specification Generator**: The documentation tab lets you trigger the AST builder to write a unified system architecture blueprint guide with a single click.
+- **Dynamic Deletion**: Hovering over any repository exposes a delete button to clean up vectors and databases dynamically.
 
-### ⚙️ Semantic Code Chunker & AST Indexer (Tree-sitter)
-- **Language-Aware AST Parser:** Uses Tree-sitter to parse `.py`, `.js`, `.jsx`, `.ts`, `.tsx`, `.go`, `.rs`, `.cpp`, `.c`, and `.java` files, extracting semantic symbol scopes (classes, functions, and methods).
-- **Linear Fallback Chunker:** Grabs clean, configurable line ranges for unsupported extensions, ensuring full repository coverage.
-- **Vector Search Cache:** Generates embeddings and upserts code chunks directly into PostgreSQL via `pgvector` for semantic search queries.
-
-### 🤖 Stateful Multi-Agent Orchestration (LangGraph)
-- **PR Reviewer Agent:** Analyzes raw Git diff payloads to pinpoint potential bugs, architectural deviations, and optimization patterns.
-- **Doc Builder Agent:** Iterates over the repository symbols to compile holistic, markdown-formatted system documentation.
-- **Issue Resolver Agent:** Resolves bugs and stack traces by querying relevant files and proposing code repairs.
-- **State Checkpointing:** Employs SQLAlchemy checkpoint savers to store agent trace/graph state over long-running processes.
+### 🤖 Stateful Multi-Agent Orchestration (LangGraph + MCP)
+- **PR Reviewer Agent**: Inspects Git diffs using GitHub MCP tools to generate reviews (Architectural Impact, Potential Risks, Verdict).
+- **Issue Diagnostics Agent**: Retrieves open issues and performs AI root cause analyses and code fixes.
+- **AST parser & pgvector**: Walks code trees to generate vector embeddings using `BAAI/bge-small-en-v1.5` and performs cosine distance queries inside PostgreSQL.
 
 ---
 
-## Architecture & Tech Stack
-
-```
-                     ┌──────────────────┐
-                     │   React Frontend │
-                     └────────┬─────────┘
-                              │ REST API
-                              ▼
- ┌───────────────────────────────────────────────────────────┐
- │                   FastAPI Backend Server                  │
- │                                                           │
- │  ┌──────────────────┐ ┌────────────────┐ ┌─────────────┐  │
- │  │ Indexing Pipeline│ │ LangGraph      │ │ Background  │  │
- │  │ (Tree-sitter AST)│ │ Agent Workflows│ │ Task Runner │  │
- │  └────────┬─────────┘ └───────┬────────┘ └──────┬──────┘  │
- └───────────┼───────────────────┼─────────────────┼─────────┘
-             │ Vector Embeddings │ State/Runs      │ DB Read/Write
-             ▼                   ▼                 ▼
- ┌───────────────────────────────────────────────────────────┐
- │                  PostgreSQL DB (pgvector)                 │
- └───────────────────────────────────────────────────────────┘
-```
-
-- **Backend:** FastAPI, LangGraph, SQLModel (SQLAlchemy + Pydantic v2), Alembic, Pyright.
-- **LLM/Embeddings:** Groq (primary inference e.g. LLaMA 3.3) & OpenAI (embeddings fallback e.g. text-embedding-3-small).
-- **Frontend:** Vite, React, Vanilla CSS.
+## Tech Stack
+*   **Backend:** FastAPI, LangGraph, SQLModel (SQLAlchemy + Pydantic v2), Alembic, Pyright.
+*   **Inference:** 100% Groq API (LLaMA 3.3 / LLaMA 3.1) and HuggingFace Hub.
+*   **Frontend:** React 19, Vite, React Router v7, React Markdown, Lucide icons.
 
 ---
 
@@ -61,38 +60,37 @@ Using **Tree-sitter AST parsing**, **pgvector** similarity search, and multi-age
 ├── app/
 │   ├── api/v1/                   # REST Route Handlers
 │   │   ├── endpoints/
-│   │   │   ├── jobs.py           # Background agent execution (PR reviews, docs, issues)
-│   │   │   └── repositories.py   # Workspace registration, scanning, and indexing
-│   │   ├── chatbot.py            # Conversational agent chat endpoint
-│   │   └── api.py                # Main API router setup
+│   │   │   ├── pull_requests.py  # GitHub MCP PR review endpoints
+│   │   │   ├── issues.py         # GitHub MCP bug diagnostics endpoints
+│   │   │   ├── docs.py           # AST blueprint docs generator
+│   │   │   └── repositories.py   # Workspace scanning, indexing, and deletion
 │   ├── core/
 │   │   ├── langgraph/            # LangGraph agent definitions & tools
-│   │   ├── prompts/              # Core agent prompts
 │   │   ├── logging.py            # Structured logging (structlog)
 │   │   └── database.py           # Async DB engine & session builders
 │   ├── indexer/
 │   │   ├── parser.py             # Tree-sitter AST & fallback chunker
-│   │   └── pipeline.py           # Scans directories, extracts symbols, writes embeddings
-│   ├── models/                   # SQLModel DB Models (Repository, CodeChunk, AgentRun)
-│   ├── schemas/                  # Pydantic schemas (Graph state, API payloads)
-│   └── main.py                   # FastAPI Application Entrypoint
+│   │   └── pipeline.py           # Extracts symbols & writes embeddings
+│   ├── models/                   # SQLModel DB Models (Repository, CodeChunk)
+│   └── main.py                   # FastAPI Entrypoint & Database Seeder
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx               # Console Interface (Workspace + Chat + Jobs Panels)
-│   │   ├── index.css             # Main styling system
-│   │   └── main.jsx              # React Entrypoint
-├── alembic/                      # Database migrations
-└── Makefile                      # Build, test, migration, and runner commands
+│   │   ├── components/           # Sidebar & Layout elements
+│   │   ├── pages/                # ChatPage, PullRequestsPage, DocsPage, IssuesPage
+│   │   └── index.css             # Dark glassmorphic design system
+│   └── vercel.json               # Vercel SPA routing configurations
+├── docker-compose.yml            # Local DB + API + Frontend orchestrator
+└── Makefile                      # Build, test, and dev runners
 ```
 
 ---
 
-## Getting Started
+## Quick Start (Self-Hosted)
 
 ### 1. Prerequisites
 - **Python 3.12+**
 - **Node.js 18+**
-- **PostgreSQL** with the `pgvector` extension enabled.
+- **PostgreSQL** with the `pgvector` extension (or Docker).
 
 ### 2. Environment Setup
 Copy the example environment file and populate your credentials:
@@ -101,62 +99,27 @@ Copy the example environment file and populate your credentials:
 cp .env.example .env.development
 ```
 
-Key variables in `.env.development`:
-- `GROQ_API_KEY`: Required for LLM execution.
-- `OPENAI_API_KEY`: Required for generating semantic embeddings.
-- `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD`: Your database credentials.
+Key variables:
+- `GROQ_API_KEY`: Required for LLaMA 3.3 inference.
+- `HF_TOKEN`: Required for HuggingFace embeddings extraction.
+- `GITHUB_PERSONAL_ACCESS_TOKEN`: Required to fetch PRs/Issues via GitHub MCP.
+- `DEMO_MODE`: Set to `true` to enable hosted demo protection.
 
-### 3. Installation & Database Migration
-Set up your virtual environment, install dependencies, and run the Alembic migrations:
-
-```bash
-# Install pip dependencies (using uv) and dev tools
-make install
-
-# Apply database migrations to head
-make migrate
-```
-
-### 4. Running the Applications
-
-#### Start Backend Server
-Run the FastAPI developer server (runs on `http://localhost:8000`):
+### 3. Run via Docker Compose (Recommended)
+Launch the entire stack (Database, API Backend, Frontend Client) with one command:
 
 ```bash
-make dev
+docker compose up --build
 ```
-
-#### Start Frontend Client
-Navigate to the frontend directory, install web dependencies, and start the development server (runs on `http://localhost:5173`):
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
+- Backend API runs on `http://localhost:8000`
+- Frontend Console runs on `http://localhost:5173`
 
 ---
 
 ## Available Make Targets
 
-The following targets are available in the root `Makefile`:
-
-- `make install` - Installs Python dependencies using `uv` and initializes pre-commit hooks.
-- `make dev` - Starts the FastAPI reload server on port 8000.
-- `make migrate` - Upgrades the DB schema to the latest migration version.
-- `make migration MSG="description"` - Generates a new autogenerated Alembic database migration.
-- `make check` - Lints and runs typechecking (`ruff check` + `pyright`).
-- `make docker-up` - Spins up API and PostgreSQL databases in background containers.
-- `make stack-up` - Launches full deployment stack (API, DB, Prometheus, Grafana).
-
----
-
-## Coding Guidelines
-
-When contributing, ensure all rules in [AGENTS.md](AGENTS.md) are strictly adhered to:
-1. **Imports:** Always at the top of the file; never inside functions or classes.
-2. **Logging:** Use `structlog` exclusively. Messages must be `lowercase_with_underscores`. Pass parameters as `kwargs` instead of using f-strings inside the event message.
-3. **Database Operations:** Always perform database reads, writes, and transactions asynchronously.
-4. **Retry Logic:** Use the `tenacity` library for exponential backoff on flaky operations.
-5. **Linting & Formatting:** Ensure code passes `make check` before opening a pull request.
-
+- `make install` - Installs dependencies using `uv` and pre-commit hooks.
+- `make dev` - Starts the FastAPI backend with `--reload-dir app` configuration.
+- `make frontend-dev` - Starts the Vite development server.
+- `make check` - Runs `ruff` checks and `pyright` typechecking.
+- `make migrate` - Performs database migrations.

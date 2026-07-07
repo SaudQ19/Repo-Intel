@@ -36,7 +36,7 @@ install:
 # Server
 # ---------------------------------------------------------------------------
 dev:
-	@$(call run_with_env,uv run --python 3.12 uvicorn app.main:app --reload --port 8000)
+	@$(call run_with_env,uv run --python 3.12 uvicorn app.main:app --reload --reload-dir app --port 8000)
 
 staging:
 	@$(call run_with_env,$(MAKE) _serve ENV=staging)
@@ -66,16 +66,14 @@ migrate-history:
 	@$(call run_with_env,uv run --python 3.12 alembic history --verbose)
 
 # ---------------------------------------------------------------------------
-# Evaluation
 # ---------------------------------------------------------------------------
-eval:
-	@$(call run_with_env,python -m evals.main --interactive)
+# Frontend
+# ---------------------------------------------------------------------------
+frontend-dev:
+	cd frontend && npm run dev
 
-eval-quick:
-	@$(call run_with_env,python -m evals.main --quick)
-
-eval-no-report:
-	@$(call run_with_env,python -m evals.main --no-report)
+frontend-build:
+	cd frontend && npm run build
 
 # ---------------------------------------------------------------------------
 # Code quality
@@ -174,10 +172,9 @@ help:
 	@echo "  migrate-downgrade    Rollback last migration"
 	@echo "  migrate-history      Show migration history"
 	@echo ""
-	@echo "Evaluation:"
-	@echo "  eval                 Run evals (interactive)"
-	@echo "  eval-quick           Run evals (default settings)"
-	@echo "  eval-no-report       Run evals without report"
+	@echo "Frontend:"
+	@echo "  frontend-dev         Start frontend Vite development server"
+	@echo "  frontend-build       Build frontend application for production"
 	@echo ""
 	@echo "Code quality:"
 	@echo "  lint                 Ruff lint check"
@@ -206,7 +203,7 @@ help:
 
 .PHONY: install dev staging prod _serve \
         migrate migration migrate-downgrade migrate-history \
-        eval eval-quick eval-no-report \
+        frontend-dev frontend-build \
         lint format typecheck check pre-commit pre-commit-update \
         docker-build docker-up docker-down docker-logs docker-migrate \
         docker-migrate-downgrade docker-migrate-history \

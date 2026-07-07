@@ -38,8 +38,9 @@ def pgvector_search_tool(query: str, config: RunnableConfig, limit: int = 5) -> 
         # 2. Run cosine similarity query using SQLModel & pgvector operators
         with Session(database_service.engine) as session:
             # We use pgvector's cosine distance operator (<=>)
-            # Order by cosine distance ascending (closest first)
-            distance_expr = CodeChunk.embedding.cosine_distance(query_vector)
+            from typing import Any
+            embedding_col: Any = CodeChunk.embedding
+            distance_expr = embedding_col.cosine_distance(query_vector)
             statement = (
                 select(CodeChunk, distance_expr.label("distance"))
                 .where(CodeChunk.repository_id == repository_id)

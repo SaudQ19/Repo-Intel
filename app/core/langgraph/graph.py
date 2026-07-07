@@ -46,6 +46,7 @@ from app.core.config import (
     settings,
 )
 from app.core.langgraph.tools import tools
+from app.core.langgraph.tools.github_mcp import get_github_mcp_tools
 from app.core.logging import logger
 from app.core.metrics import llm_inference_duration_seconds
 from app.core.observability import langfuse_callback_handler
@@ -219,6 +220,17 @@ class LangGraphAgent:
         """
         if self._graph is None:
             try:
+                # Dynamically load GitHub MCP tools if enabled
+                try:
+                    mcp_tools = await get_github_mcp_tools()
+                    if mcp_tools:
+                        all_tools = list(tools) + mcp_tools
+                        self.llm_service.bind_tools(all_tools)
+                        self.tools_by_name = {t.name: t for t in all_tools}
+                        logger.info("github_mcp_tools_bound_to_graph", count=len(mcp_tools))
+                except Exception as e:
+                    logger.error("failed_to_load_github_mcp_tools", error=str(e))
+
                 graph_builder = StateGraph(GraphState)
                 graph_builder.add_node("chat", self._chat, destinations=("tool_call", END))
                 graph_builder.add_node(

@@ -4,6 +4,7 @@ services:
     name: repointel-backend
     env: docker
     dockerfilePath: Dockerfile
+    preDeployCommand: /app/.venv/bin/alembic upgrade head
     plan: free
     envVars:
       - key: APP_ENV
@@ -18,6 +19,8 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: GITHUB_PERSONAL_ACCESS_TOKEN
+        sync: false
 
   # 2. Frontend Static Site (React/Vite)
   - type: web

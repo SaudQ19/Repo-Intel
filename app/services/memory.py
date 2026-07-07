@@ -1,3 +1,5 @@
+"""Long-term memory service powered by mem0ai and pgvector."""
+
 from typing import Any
 from mem0 import AsyncMemory
 
@@ -11,11 +13,17 @@ from app.core.logging import logger
 
 class MockMemory:
     """Mock memory backend fallback when local/api providers are unavailable."""
+
     async def add(self, *args, **kwargs):
+        """Add mock memory entry."""
         return None
+
     async def search(self, *args, **kwargs):
+        """Search mock memory entries."""
         return []
+
     async def delete(self, *args, **kwargs):
+        """Delete mock memory entry."""
         return None
 
 

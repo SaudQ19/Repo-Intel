@@ -64,6 +64,45 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception("memory_service_pre_warm_failed", error=str(e))
 
+    # Seed default repositories if not already present
+    try:
+        from sqlmodel import select, Session
+        from app.models.repository import Repository
+        with Session(database_service.engine) as session:
+            # Denoising Diffusion PyTorch
+            stmt = select(Repository).where(Repository.clone_url == "https://github.com/lucidrains/denoising-diffusion-pytorch.git")
+            res = session.exec(stmt)
+            diffusion_repo = res.first()
+            if not diffusion_repo:
+                diffusion_repo = Repository(
+                    id="dd4568a2-0445-4df7-b8ad-22bafbd2dc8a",
+                    name="Denoising Diffusion PyTorch",
+                    clone_url="https://github.com/lucidrains/denoising-diffusion-pytorch.git",
+                    branch="main",
+                    status="pending"
+                )
+                session.add(diffusion_repo)
+                logger.info("seeded_denoising_diffusion_pytorch_repo")
+                
+            # Starlette
+            stmt = select(Repository).where(Repository.clone_url == "https://github.com/encode/starlette.git")
+            res = session.exec(stmt)
+            starlette_repo = res.first()
+            if not starlette_repo:
+                starlette_repo = Repository(
+                    id="312055a3-c58c-438e-aefe-c60e28319d12",
+                    name="Starlette",
+                    clone_url="https://github.com/encode/starlette.git",
+                    branch="master",
+                    status="pending"
+                )
+                session.add(starlette_repo)
+                logger.info("seeded_starlette_repo")
+                
+            session.commit()
+    except Exception as e:
+        logger.exception("default_repos_seeding_failed", error=str(e))
+
     yield
 
     # Cleanup on shutdown
