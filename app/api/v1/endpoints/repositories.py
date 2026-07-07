@@ -100,9 +100,6 @@ def clone_and_index_task(repo_id: str, clone_url: str, branch: str) -> None:
 @router.post("/", response_model=RepositoryResponse, status_code=status.HTTP_201_CREATED)
 async def register_repository(repo_in: RepositoryCreate):
     """Register a new repository for indexing."""
-    if settings.DEMO_MODE:
-        raise HTTPException(status_code=403, detail="Repository registration is disabled in demo mode.")
-
     repo_id = str(uuid.uuid4())
     
     with Session(database_service.engine) as session:
@@ -136,8 +133,6 @@ async def list_repositories():
 @router.delete("/{repo_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_repository(repo_id: str):
     """Delete a repository and its associated indexed chunks."""
-    if settings.DEMO_MODE:
-        raise HTTPException(status_code=403, detail="Repository deletion is disabled in demo mode.")
     with Session(database_service.engine) as session:
         repo = session.get(Repository, repo_id)
         if not repo:
@@ -171,8 +166,6 @@ async def delete_repository(repo_id: str):
 @router.post("/{repo_id}/index", status_code=status.HTTP_202_ACCEPTED)
 async def trigger_indexing(repo_id: str, background_tasks: BackgroundTasks):
     """Asynchronously scan and index the codebase of a registered repository."""
-    if settings.DEMO_MODE:
-        raise HTTPException(status_code=403, detail="Repository indexing is disabled in demo mode.")
     with Session(database_service.engine) as session:
         repo = session.get(Repository, repo_id)
         if not repo:
