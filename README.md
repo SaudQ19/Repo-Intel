@@ -8,7 +8,7 @@
 
 https://github.com/user-attachments/assets/28b877c9-f15a-437f-a6da-90d9655914b1
 
-> Covers: repository registration, AST indexing, semantic chat, PR review via GitHub MCP, and issue diagnostics.*
+> Covers: repository registration, AST indexing, semantic chat, PR review via GitHub MCP, and issue diagnostics
 -------
 
 ## Tech Stack
