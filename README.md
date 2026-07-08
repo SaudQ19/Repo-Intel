@@ -1,6 +1,6 @@
 # Repo-Intel — Repository Intelligence Platform
 
-> An agentic AI backend that **understands your codebase**. Point it at any GitHub repository, and it indexes, semantically searches, reviews PRs, diagnoses issues, and generates architecture documentation — all driven by a stateful multi-agent LangGraph pipeline.
+> An agentic AI platform that **understands your codebase**. Point it at any GitHub repository, and it indexes, semantically searches, reviews PRs, diagnoses issues, and generates architecture documentation — all driven by a stateful multi-agent LangGraph pipeline.
 > Understanding unfamiliar codebases is slow and expensive. Repo-Intel eliminates that friction by treating your entire repository as a queryable knowledge base. Instead of reading files manually, you ask questions, get answers grounded in the actual code, and receive automated PR/issue analysis — all through a single FastAPI-powered agentic backend.
 
 ---
