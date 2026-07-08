@@ -22,7 +22,6 @@ https://github.com/user-attachments/assets/28b877c9-f15a-437f-a6da-90d9655914b1
 | **LLM Inference** | Groq API — LLaMA 3.3 70B / LLaMA 3.1 8B (circular fallback) |
 | **Embeddings** | HuggingFace `BAAI/bge-small-en-v1.5` via HF Inference Endpoints |
 | **Database** | PostgreSQL + pgvector extension (SQLModel / Alembic) |
-| **Observability** | structlog, Prometheus metrics, Langfuse tracing |
 
 ---
 
