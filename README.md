@@ -1,15 +1,14 @@
 # Repo-Intel — Repository Intelligence Platform
 
 > An agentic AI backend that **understands your codebase**. Point it at any GitHub repository, and it indexes, semantically searches, reviews PRs, diagnoses issues, and generates architecture documentation — all driven by a stateful multi-agent LangGraph pipeline.
-
 > Understanding unfamiliar codebases is slow and expensive. Repo-Intel eliminates that friction by treating your entire repository as a queryable knowledge base. Instead of reading files manually, you ask questions, get answers grounded in the actual code, and receive automated PR/issue analysis — all through a single FastAPI-powered agentic backend.
 
 ---
-## 📹 Video Demo
+## Video Demo
 
-> [![Watch the Demo](https://img.shields.io/badge/Watch%20Demo-Vimeo-1AB7EA?style=for-the-badge&logo=vimeo)](https://vimeo.com/your-demo-video-link)
+https://github.com/user-attachments/assets/28b877c9-f15a-437f-a6da-90d9655914b1
 
-**Covers: repository registration, AST indexing, semantic chat, PR review via GitHub MCP, and issue diagnostics.*
+> Covers: repository registration, AST indexing, semantic chat, PR review via GitHub MCP, and issue diagnostics.*
 -------
 
 ## Tech Stack
