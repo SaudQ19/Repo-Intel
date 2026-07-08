@@ -81,8 +81,38 @@ Pull request diffs and issue bodies are fetched live via the GitHub Model Contex
 
 ### 📄 Architecture Documentation Generation
 Triggers an LLM pass over indexed code chunks to produce a structured system specification blueprint.
+
 ---
 
+## Stateful LangGraph Agents
+
+The platform coordinates multiple specialized agents that communicate statefully via standard LangGraph message states, background jobs, and shared databases:
+
+### 1. The Core Chat Agent (`LangGraphAgent`)
+*   **Role**: Interactive chat interface.
+*   **Functionality**: Autonomously invokes the `pgvector_search_tool` to perform semantic code lookup.
+*   **Communication**: Operates inside a loop (`chat` node $\leftrightarrow$ `tool_call` node) and saves conversation thread states persistently via the PostgreSQL checkpointer.
+
+### 2. Pull Request Reviewer Agent (`PRReviewerAgent`)
+*   **Role**: Automated codebase code reviewer.
+*   **Functionality**: Analyzes incoming Git diff payloads to check architectural impact and identify potential risks.
+*   **Communication**: Invoked asynchronously by background workers, pulling PR context from the GitHub MCP tool server.
+
+### 3. Issue Resolver Agent (`IssueResolverAgent`)
+*   **Role**: Code bug diagnostics.
+*   **Functionality**: Takes tracebacks and issue descriptions, locates buggy code files using semantic search, and generates fixes.
+*   **Communication**: Works hand-in-hand with the search tool database to ground its proposed code corrections.
+
+### 4. Doc Builder Agent (`DocBuilderAgent`)
+*   **Role**: Technical documentation engine.
+*   **Functionality**: Triggers documentation blueprints by querying the entire index database structure.
+*   **Communication**: Summarizes structural classes and functions into single markdown blueprints.
+
+#### How They Coordinate & Communicate
+*   **Database-Driven Job Coordination**: When a request (PR review, issue analysis, doc generation) is received, a FastAPI background task registers an `AgentRun` job tracking its state (`pending` $\rightarrow$ `running` $\rightarrow$ `completed`/`failed`).
+*   **Shared Context Isolation**: Each agent runs its own LangGraph/chain instance, isolation-contained by thread IDs, pulling code context from the shared `pgvector` store and interacting with the GitHub API via the MCP gateway.
+
+---
 ## Setup
 
 ### Prerequisites
