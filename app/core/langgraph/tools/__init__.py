@@ -1,21 +1,14 @@
 """LangGraph tools for enhanced language model capabilities.
 
 This package contains custom tools that can be used with LangGraph to extend
-the capabilities of language models. Currently includes tools for web search
-and other external integrations.
+the capabilities of language models. The chat agent uses only the pgvector
+semantic search tool to query the indexed repository data.
 """
 
 from langchain_core.tools.base import BaseTool
 
-from .ask_human import ask_human
-from .duckduckgo_search import duckduckgo_search_tool
 from .pgvector_search import pgvector_search_tool
-from .mcp_filesystem import list_directory_tool, view_file_content_tool
 
 tools: list[BaseTool] = [
-    duckduckgo_search_tool, 
-    ask_human, 
-    pgvector_search_tool, 
-    list_directory_tool, 
-    view_file_content_tool
+    pgvector_search_tool,
 ]

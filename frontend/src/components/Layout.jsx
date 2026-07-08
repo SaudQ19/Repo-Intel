@@ -125,7 +125,15 @@ export default function Layout({ repos, activeRepoId, setActiveRepoId, loadRepos
                   >
                     <button className="sidebar-repo-select-btn">
                       <Folder size={14} className="repo-folder-icon" />
-                      <span className="repo-item-name">{r.name}</span>
+                      <span className="repo-item-name">
+                        {r.name}
+                        {r.status === 'indexing' && (
+                          <span className="repo-indexing-status-text"> (indexing...)</span>
+                        )}
+                        {r.status === 'pending' && (
+                          <span className="repo-indexing-status-text"> (pending...)</span>
+                        )}
+                      </span>
                     </button>
                     
                     {r.status === 'indexing' && (

@@ -1088,6 +1088,13 @@ body {
   white-space: nowrap;
 }
 
+.repo-indexing-status-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: normal;
+}
+
 .status-dot-mini {
   width: 5px;
   height: 5px;

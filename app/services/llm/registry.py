@@ -35,18 +35,18 @@ class LLMRegistry:
             ),
         },
         {
-            "name": "llama-3.3-70b-specdec",
+            "name": "llama-3.1-8b-instant",
             "llm": ChatOpenAI(
-                model="llama-3.3-70b-specdec",
+                model="llama-3.1-8b-instant",
                 api_key=_GROQ_KEY,
                 base_url=settings.GROQ_BASE_URL,
                 model_kwargs=_TOKEN_LIMIT,
             ),
         },
         {
-            "name": "llama-3.1-8b-instant",
+            "name": "mixtral-8x7b-32768",
             "llm": ChatOpenAI(
-                model="llama-3.1-8b-instant",
+                model="mixtral-8x7b-32768",
                 api_key=_GROQ_KEY,
                 base_url=settings.GROQ_BASE_URL,
                 model_kwargs=_TOKEN_LIMIT,

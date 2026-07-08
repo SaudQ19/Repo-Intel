@@ -15,6 +15,7 @@ except KeyError:
     _TIKTOKEN_ENCODING = tiktoken.get_encoding("cl100k_base")
 
 
+
 def _count_tokens_tiktoken(messages: list) -> int:
     """Count tokens locally using tiktoken — no API call needed."""
     num_tokens = 0
@@ -136,3 +137,35 @@ def prepare_messages(messages: list[Message], system_prompt: str) -> list[Messag
             raise
 
     return [Message(role="system", content=system_prompt)] + trimmed_messages
+
+
+def trim_messages_for_llm(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Trim a list of BaseMessage objects to fit within the context window budget.
+
+    Operates directly on BaseMessage instances (the type used by LangGraph state)
+    so no serialisation round-trip through dict is needed. The system message must
+    be prepended separately by the caller after trimming.
+
+    Args:
+        messages: Conversation history as BaseMessage objects.
+
+    Returns:
+        A trimmed list that fits within MAX_CONTEXT_TOKENS.
+    """
+    try:
+        return _trim_messages(  # type: ignore[return-value]
+            messages,
+            strategy="last",
+            token_counter=_count_tokens_tiktoken,
+            max_tokens=settings.MAX_CONTEXT_TOKENS,
+            start_on="human",
+            include_system=False,
+            allow_partial=False,
+        )
+    except ValueError as e:
+        logger.warning(
+            "context_trim_failed_returning_full_history",
+            error=str(e),
+            message_count=len(messages),
+        )
+        return messages

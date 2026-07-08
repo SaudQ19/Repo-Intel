@@ -138,18 +138,25 @@ async def get_repository_docs(owner: str, repo: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch documentation: {str(e)}")
 
 
+class GenerateDocsRequest(BaseModel):
+    """Request payload for generating architectural documentation."""
+
+    repository_id: str | None = None
+
+
 @router.post("/{owner}/{repo}/generate")
-async def generate_documentation(owner: str, repo: str, repository_id: str | None = None):
+async def generate_documentation(owner: str, repo: str, request_data: GenerateDocsRequest):
     """Generate architectural documentation for an indexed repository.
 
     Args:
         owner: Repository owner (for display).
         repo: Repository name (for display).
-        repository_id: Optional indexed repository ID for code-aware docs.
+        request_data: Request body containing optional indexed repository ID.
 
     Returns:
         Generated architectural documentation.
     """
+    repository_id = request_data.repository_id
     if repository_id:
         try:
             result = await doc_agent.generate_docs(repository_id)
@@ -159,3 +166,4 @@ async def generate_documentation(owner: str, repo: str, repository_id: str | Non
             raise HTTPException(status_code=500, detail=f"Failed to generate documentation: {str(e)}")
 
     return {"documentation": "Please provide a repository_id of an indexed repository to generate architectural docs."}
+

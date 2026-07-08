@@ -1,5 +1,7 @@
 """pgvector search tool for LangGraph."""
 
+from typing import Any
+
 from langchain_core.tools import tool
 from langchain_core.runnables.config import RunnableConfig
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
@@ -10,9 +12,15 @@ from app.core.logging import logger
 from app.models.chunk import CodeChunk
 from app.services.database import database_service
 
+# Cache the embeddings client at module level — no need to re-instantiate per call
+_embeddings = HuggingFaceEndpointEmbeddings(
+    model=settings.LONG_TERM_MEMORY_EMBEDDER_MODEL,
+    huggingfacehub_api_token=settings.HF_TOKEN,
+)
+
 
 @tool
-def pgvector_search_tool(query: str, config: RunnableConfig, limit: int = 5) -> str:
+def pgvector_search_tool(query: str, config: RunnableConfig, limit: int = 3) -> str:
     """Perform a semantic search across code chunks in the active repository.
 
     Args:
@@ -28,17 +36,11 @@ def pgvector_search_tool(query: str, config: RunnableConfig, limit: int = 5) -> 
         return "Error: No active repository context. Please supply a repository_id in your request."
 
     try:
-        # 1. Generate query embedding
-        embeddings = HuggingFaceEndpointEmbeddings(
-            model=settings.LONG_TERM_MEMORY_EMBEDDER_MODEL,
-            huggingfacehub_api_token=settings.HF_TOKEN,
-        )
-        query_vector = embeddings.embed_query(query)
+        # 1. Generate query embedding using the cached embeddings client
+        query_vector = _embeddings.embed_query(query)
 
         # 2. Run cosine similarity query using SQLModel & pgvector operators
         with Session(database_service.engine) as session:
-            # We use pgvector's cosine distance operator (<=>)
-            from typing import Any
             embedding_col: Any = CodeChunk.embedding
             distance_expr = embedding_col.cosine_distance(query_vector)
             statement = (
@@ -47,9 +49,9 @@ def pgvector_search_tool(query: str, config: RunnableConfig, limit: int = 5) -> 
                 .order_by("distance")
                 .limit(limit)
             )
-            
+
             results = session.exec(statement).all()
-            
+
             if not results:
                 return f"No code results found matching '{query}' in repository."
 
@@ -61,9 +63,9 @@ def pgvector_search_tool(query: str, config: RunnableConfig, limit: int = 5) -> 
                     f"**Symbol**: {chunk.symbol_name or 'None'} | **Type**: {chunk.symbol_type or 'None'} | **Relevance**: {score:.2f}\n"
                     f"```\n{chunk.content}\n```\n"
                 )
-                
+
             return "\n".join(formatted_results)
-            
+
     except Exception as e:
         logger.exception("pgvector_search_tool_failed", query=query, repo_id=repository_id, error=str(e))
         return f"Error executing semantic search: {str(e)}"

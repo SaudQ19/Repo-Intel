@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import (
+    Any,
     AsyncGenerator,
     Optional,
 )
@@ -11,6 +12,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    SystemMessage,
     ToolMessage,
     convert_to_openai_messages,
 )
@@ -44,7 +46,7 @@ from app.core.config import (
     settings,
 )
 from app.core.langgraph.tools import tools
-from app.core.langgraph.tools.github_mcp import get_github_mcp_tools
+
 from app.core.logging import logger
 from app.core.metrics import llm_inference_duration_seconds
 from app.core.observability import langfuse_callback_handler
@@ -57,8 +59,8 @@ from app.services.llm import llm_service
 from app.utils import (
     dump_messages,
     extract_text_content,
-    prepare_messages,
     process_llm_response,
+    trim_messages_for_llm,
 )
 
 PostgresConnPool = AsyncConnectionPool[AsyncConnection[DictRow]]
@@ -142,15 +144,27 @@ class LangGraphAgent:
 
         username = config.get("metadata", {}).get("username")
         thread_id = config.get("configurable", {}).get("thread_id")
-        SYSTEM_PROMPT = load_system_prompt(username=username, long_term_memory=state.long_term_memory)
+        system_prompt_text = load_system_prompt(
+            username=username,
+            long_term_memory=state.long_term_memory or "No relevant memory found.",
+        )
 
-        # Prepare messages with system prompt
-        messages = prepare_messages(state.messages, SYSTEM_PROMPT)
+        # Trim conversation history to MAX_CONTEXT_TOKENS before sending to the LLM.
+        # state.messages are BaseMessage objects managed by the add_messages reducer.
+        trimmed_history = trim_messages_for_llm(list(state.messages))
+        messages: list[Any] = [SystemMessage(content=system_prompt_text)] + trimmed_history
+
+        logger.debug(
+            "chat_context_built",
+            total_messages=len(state.messages),
+            trimmed_messages=len(trimmed_history),
+            session_id=thread_id,
+        )
 
         try:
             # Use LLM service with automatic retries and circular fallback
             with llm_inference_duration_seconds.labels(model=model_name).time():
-                response_message = await self.llm_service.call(dump_messages(messages))
+                response_message = await self.llm_service.call(messages)
 
             # Process response to handle structured content blocks
             response_message = process_llm_response(response_message)
@@ -179,11 +193,12 @@ class LangGraphAgent:
             raise Exception(f"failed to get llm response after trying all models: {str(e)}")
 
     # Define our tool node
-    async def _tool_call(self, state: GraphState) -> Command:
+    async def _tool_call(self, state: GraphState, config: RunnableConfig) -> Command:
         """Process tool calls from the last message.
 
         Args:
             state: The current agent state containing messages and tool calls.
+            config: The runnable configuration containing metadata.
 
         Returns:
             Command: Command object with updated messages and routing back to chat.
@@ -191,7 +206,10 @@ class LangGraphAgent:
         tool_calls = state.messages[-1].tool_calls
 
         async def _execute_tool(tool_call: dict) -> ToolMessage:
-            tool_result = await self.tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
+            tool_result = await self.tools_by_name[tool_call["name"]].ainvoke(
+                tool_call["args"],
+                config=config,
+            )
             return ToolMessage(
                 content=tool_result,
                 name=tool_call["name"],
@@ -214,17 +232,6 @@ class LangGraphAgent:
         """
         if self._graph is None:
             try:
-                # Dynamically load GitHub MCP tools if enabled
-                try:
-                    mcp_tools = await get_github_mcp_tools()
-                    if mcp_tools:
-                        all_tools = list(tools) + mcp_tools
-                        self.llm_service.bind_tools(all_tools)
-                        self.tools_by_name = {t.name: t for t in all_tools}
-                        logger.info("github_mcp_tools_bound_to_graph", count=len(mcp_tools))
-                except Exception as e:
-                    logger.error("failed_to_load_github_mcp_tools", error=str(e))
-
                 graph_builder = StateGraph(GraphState)
                 graph_builder.add_node("chat", self._chat, destinations=("tool_call", END))
                 graph_builder.add_node(
@@ -234,7 +241,6 @@ class LangGraphAgent:
                     retry_policy=RetryPolicy(max_attempts=3),
                 )
                 graph_builder.set_entry_point("chat")
-                graph_builder.set_finish_point("chat")
 
                 # Get connection pool (may be None in production if DB unavailable)
                 connection_pool = await self._get_connection_pool()
@@ -306,6 +312,7 @@ class LangGraphAgent:
         config: RunnableConfig = {
             "configurable": {"thread_id": session_id},
             "callbacks": callbacks,
+            "recursion_limit": 25,
             "metadata": {
                 "user_id": user_id,
                 "username": username,
@@ -373,6 +380,7 @@ class LangGraphAgent:
         config: RunnableConfig = {
             "configurable": {"thread_id": session_id},
             "callbacks": callbacks,
+            "recursion_limit": 25,
             "metadata": {
                 "user_id": user_id,
                 "username": username,
@@ -400,6 +408,10 @@ class LangGraphAgent:
                 stream_mode="messages",
             ):
                 if not isinstance(token, (AIMessage, AIMessageChunk)):
+                    continue
+
+                # Skip streaming content if the token is part of a tool call
+                if getattr(token, "tool_calls", None) or getattr(token, "tool_call_chunks", None):
                     continue
 
                 text = extract_text_content(token.content)
@@ -438,12 +450,18 @@ class LangGraphAgent:
 
     def __process_messages(self, messages: list[BaseMessage]) -> list[Message]:
         openai_style_messages = convert_to_openai_messages(messages)
-        # keep just assistant and user messages
-        return [
-            Message(role=message["role"], content=str(message["content"]))
-            for message in openai_style_messages
-            if message["role"] in ["assistant", "user"] and message["content"]
-        ]
+        # keep just assistant and user messages, filtering out intermediate tool calls
+        processed = []
+        for message in openai_style_messages:
+            if message["role"] not in ["assistant", "user"]:
+                continue
+            if not message.get("content"):
+                continue
+            # Skip intermediate assistant messages that perform tool calls
+            if message["role"] == "assistant" and message.get("tool_calls"):
+                continue
+            processed.append(Message(role=message["role"], content=str(message["content"])))
+        return processed
 
     async def clear_chat_history(self, session_id: str) -> None:
         """Clear all chat history for a given thread ID.
